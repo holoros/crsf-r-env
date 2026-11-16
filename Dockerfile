@@ -9,12 +9,14 @@ RUN Rscript -e 'p <- readLines("/tmp/r-packages.txt"); \
       install.packages(p, Ncpus = 4); \
       miss <- setdiff(readLines("/tmp/r-packages.txt"), rownames(installed.packages())); \
       writeLines(miss, "/opt/r-packages-missing.txt"); \
-      cat("missing:", length(miss), "\n")'
+      cat("missing:", length(miss), ":", paste(miss, collapse = " "), "\n")'
 
 # Stan toolchain (cmdstanr from r-universe, CmdStan compiled into the image)
 RUN Rscript -e 'install.packages("cmdstanr", repos = c("https://stan-dev.r-universe.dev", getOption("repos")))' \
- && Rscript -e 'cmdstanr::install_cmdstan(dir = "/opt/cmdstan", cores = 4)'
-ENV CMDSTAN=/opt/cmdstan
+ && mkdir -p /opt/cmdstan \
+ && Rscript -e 'cmdstanr::install_cmdstan(dir = "/opt/cmdstan", cores = 4)' \
+ && ln -s "$(ls -d /opt/cmdstan/cmdstan-*)" /opt/cmdstan/current
+ENV CMDSTAN=/opt/cmdstan/current
 
 # Lab packages not on CRAN. stLMM from GitHub; crownwidth and gydb are added
 # as source tarballs in pkgs/ when their owners approve (not yet included).
